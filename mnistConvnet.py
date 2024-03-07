@@ -32,48 +32,46 @@ testData = datasets.MNIST(
 # every epoch to reduce model overfitting, and use Python’s multiprocessing to speed up data retrieval.
 # DataLoader is the API to do so
 
-trainDataLoader = DataLoader(trainData, batch_size=64, shuffle=True)
-testDataLoader = DataLoader(testData, batch_size=64, shuffle=True)
+trainDataLoader = DataLoader(trainData, batch_size=100, shuffle=True)
+testDataLoader = DataLoader(testData, batch_size=100, shuffle=True)
+
 
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
 
-        #define the convolution operations using nn
-        self.conv1 = nn.Conv2d(
-            in_channels=1, #grayscale image so only 1 channel
-            out_channels=16, #can mess around with this number, may allow more features to be seen
-            kernel_size=5, #can mess around with this
-            padding=2, #how much zero padding there is, since image is focusing on center, we want 0 padding
-        )
-
-        self.conv2 = nn.Conv2d(
-            in_channels=16,
-            out_channels=32, 
-            kernel_size=5,
-            padding=2 
-        )
-
+        #first convolution with 1 input channel (grayscale)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1) 
         self.relu1 = nn.ReLU()
-        self.relu2 = nn.ReLU()
-        self.maxPool1 = nn.MaxPool2d(2)
-        self.maxPool2 = nn.MaxPool2d(2)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.output = nn.Linear(
-            in_features = 32*7*7, #since we maxpool twice, the dimensions go down by a factor of 4 to 7x7
-            out_features = 10 # 
-        )
+        #second convolution with more input channels
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.relu2 = nn.ReLU()
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        #need to flatten outputs to work
+        self.flatten = nn.Flatten()
+
+        #linearize outputs 
+        self.linear1 = nn.Linear(64 * 7 * 7, 128)
+        self.relu3 = nn.ReLU()
+        self.linear2 = nn.Linear(128, 10)  # Output layer with 10 classes (digits 0-9)
 
     def forward(self, x):
-        #apply layers in order
         x = self.conv1(x)
-        x = self.reul1(x)
-        x = self.maxPoo1(x)
+        x = self.relu1(x)
+        x = self.pool1(x)
+
         x = self.conv2(x)
         x = self.relu2(x)
-        x = self.maxPool2(x)
+        x = self.pool2(x)
 
-        return self.out(x)
+        x = self.flatten(x)
+        x = self.linear1(x)
+        x = self.relu3(x)
+        x = self.linear2(x)
+        return x
 
 #declares the cnn
 cnn = CNN()
@@ -86,3 +84,18 @@ lossFunction = nn.CrossEntropyLoss()
 #make the optimizer, lots of different optimization functions, using adam here
 #lr determines the step size for the optimizer
 optimizer = optim.Adam(cnn.parameters(), lr = 0.01)
+
+num_epochs = 5
+for epoch in range(num_epochs):
+    for images, labels in trainDataLoader:
+        # Forward pass
+        outputs = cnn(images)
+        loss = lossFunction(outputs, labels)
+
+        # Backward and optimize
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+
