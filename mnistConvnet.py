@@ -83,9 +83,9 @@ lossFunction = nn.CrossEntropyLoss()
 
 #make the optimizer, lots of different optimization functions, using adam here
 #lr determines the step size for the optimizer
-optimizer = optim.Adam(cnn.parameters(), lr = 0.01)
+optimizer = optim.Adam(cnn.parameters(), lr = 0.001)
 
-num_epochs = 5
+num_epochs = 10
 for epoch in range(num_epochs):
     for images, labels in trainDataLoader:
         # Forward pass
@@ -99,3 +99,14 @@ for epoch in range(num_epochs):
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
 
+cnn.eval()
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for images, labels in testDataLoader:
+        outputs = cnn(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    print(f'Test Accuracy: {100 * correct / total}%')
