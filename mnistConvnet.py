@@ -1,7 +1,10 @@
 import torch
 import torchvision
 from torchvision import datasets
+from torch import optim
 from torch.utils.data import DataLoader
+from torch.autograd import Variable
+
 import torchvision.transforms as transforms
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -72,10 +75,14 @@ class CNN(nn.Module):
 
         return self.out(x)
 
-
-#cnn = CNN()
+#declares the cnn
+cnn = CNN()
 #print(cnn)
 
 #makes the loss function, function to be minimized for model to work
-lossFunction = nn.CrossEntropyLoss
+lossFunction = nn.CrossEntropyLoss()
+#print(lossFunction)
 
+#make the optimizer, lots of different optimization functions, using adam here
+#lr determines the step size for the optimizer
+optimizer = optim.Adam(cnn.parameters(), lr = 0.01)
